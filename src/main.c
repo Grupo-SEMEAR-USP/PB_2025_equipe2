@@ -2,6 +2,7 @@
 #include "encoder.h"
 #include "PID.h"
 #include "I2C.h"
+#include "uart_esp32.h"
 #include "pid_ctrl.h"
 
 //Inicializa as filas para troca de dados entre o I2C e o PID
@@ -87,6 +88,7 @@ void task_motor_control()
     }
 }
 
+/*
 void i2c_task_com()
 {
     
@@ -105,6 +107,7 @@ void i2c_task_com()
 
     ESP_ERROR_CHECK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
+*/
 
 void app_main()
 {
