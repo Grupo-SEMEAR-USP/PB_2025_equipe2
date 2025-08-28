@@ -74,7 +74,6 @@ bool pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata
 float pulse_count(pcnt_unit_handle_t encoder)
 {
     int pulse_count = 0;
-    pcnt_unit_clear_count(encoder);
 
     ESP_ERROR_CHECK(pcnt_unit_get_count(encoder, &pulse_count));
 

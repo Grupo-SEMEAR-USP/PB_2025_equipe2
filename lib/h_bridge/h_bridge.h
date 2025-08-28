@@ -11,16 +11,16 @@
 #define HIGH    1
 #define LOW     0
 
-#define pinStandBy          GPIO_NUM_18
+#define pinStandBy          GPIO_NUM_32
 
-#define INPUT_RIGHT_1       GPIO_NUM_14
+#define INPUT_RIGHT_1       GPIO_NUM_10
 #define INPUT_RIGHT_2       GPIO_NUM_15
 
-#define INPUT_LEFT_1        GPIO_NUM_33
-#define INPUT_LEFT_2        GPIO_NUM_32
+#define INPUT_LEFT_1        GPIO_NUM_25
+#define INPUT_LEFT_2        GPIO_NUM_33
 
-#define PWM_GPIO_LEFT       GPIO_NUM_23
-#define PWM_GPIO_RIGHT      GPIO_NUM_25
+#define PWM_GPIO_LEFT       GPIO_NUM_26
+#define PWM_GPIO_RIGHT      GPIO_NUM_20
 
 #define LEDC_CHANNEL_RIGHT   LEDC_CHANNEL_0
 #define LEDC_CHANNEL_LEFT    LEDC_CHANNEL_1

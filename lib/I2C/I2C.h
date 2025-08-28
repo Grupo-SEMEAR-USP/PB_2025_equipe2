@@ -41,5 +41,6 @@ typedef struct {
 int init_i2c();
 void i2c_read_task(target_rpm_data_t last_target_rpm);
 void i2c_write_task(rpm_data_t last_rpm);
+int reset_i2c(int i2c);
 
 #endif

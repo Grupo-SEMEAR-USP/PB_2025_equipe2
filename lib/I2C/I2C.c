@@ -28,14 +28,20 @@ void i2c_read_task(target_rpm_data_t last_target_rpm)
     int buffer = i2c_slave_read_buffer(I2C_SLAVE_NUM, data, sizeof(data), 10);
     if(buffer == sizeof(data))
     {
-
         last_target_rpm = target_rpm;
     }
 
-    else
+    else if(buffer > 0 && buffer < sizeof(data))
     {
         target_rpm = last_target_rpm;
         ESP_LOGW("I2C", "Erro na leitura | %d bytes lidos", buffer);
+
+    }
+
+    else if(buffer == 0)
+    {
+        ESP_LOGW("I2C", "Nenhum byte lido, reiniciando I2C...");
+        //reset_i2c(I2C_SLAVE_NUM);
     }
 
     memcpy(&target_rpm.target_left_rpm, &data[0], 4);
@@ -58,7 +64,7 @@ void i2c_write_task(rpm_data_t last_rpm)
         last_rpm = rpm;
     }
 
-    else
+    else 
     {
         rpm = last_rpm;
         ESP_LOGW("I2C", "Erro na leitura de fila de RPM");
