@@ -6,8 +6,8 @@
 #include "pid_ctrl.h"
 
 //Inicializa as filas para troca de dados entre o I2C e o PID
-QueueHandle_t rpm_queue;
-QueueHandle_t target_rpm_queue;
+QueueHandle_t rads_queue;
+QueueHandle_t target_rads_queue;
 
 pcnt_unit_handle_t left_encoder;
 pcnt_unit_handle_t right_encoder;
@@ -32,18 +32,18 @@ void teste_pid()
     pid_ctrl_block_handle_t left_pid = init_pid(LEFT_MOTOR);
     pid_ctrl_block_handle_t right_pid = init_pid(RIGHT_MOTOR);
 
-    target_rpm_data_t target_rpm;
+    target_rads_data_t target_rads;
 
-    target_rpm.target_left_rpm = 50;
-    target_rpm.target_right_rpm = 50;
+    target_rads.target_left_rads = 50;
+    target_rads.target_right_rads = 50;
 
     int contador = 0;
     
     while(contador != 1500)
     {
     
-        pid_calculate(left_pid, LEFT_MOTOR, target_rpm.target_left_rpm, &valpidL, left_encoder);
-        pid_calculate(right_pid, RIGHT_MOTOR, target_rpm.target_right_rpm, &valpidR, right_encoder);
+        pid_calculate(left_pid, LEFT_MOTOR, target_rads.target_left_rads, &valpidL, left_encoder);
+        pid_calculate(right_pid, RIGHT_MOTOR, target_rads.target_right_rads, &valpidR, right_encoder);
 
         /*
         if(contador < 1250)
@@ -73,15 +73,15 @@ void task_motor_control()
     pid_ctrl_block_handle_t left_pid = init_pid(LEFT_MOTOR);
     pid_ctrl_block_handle_t right_pid = init_pid(RIGHT_MOTOR);
 
-    target_rpm_data_t target_rpm;
+    target_rads_data_t target_rads;
 
     while(1)
     {
         
-        if(xQueueReceive(target_rpm_queue, &target_rpm, 0) == pdPASS)
+        if(xQueueReceive(target_rads_queue, &target_rads, 0) == pdPASS)
         {
-            pid_calculate(left_pid, LEFT_MOTOR, target_rpm.target_left_rpm, &valpidL, left_encoder);
-            pid_calculate(right_pid, RIGHT_MOTOR, target_rpm.target_right_rpm, &valpidR, right_encoder);
+            pid_calculate(left_pid, LEFT_MOTOR, target_rads.target_left_rads, &valpidL, left_encoder);
+            pid_calculate(right_pid, RIGHT_MOTOR, target_rads.target_right_rads, &valpidR, right_encoder);
 
         }
         
@@ -114,8 +114,8 @@ void app_main()
 {
     init_all();
 
-    rpm_queue = xQueueCreate(10, sizeof(rpm_data_t));
-    target_rpm_queue = xQueueCreate(10, sizeof(target_rpm_data_t));
+    rads_queue = xQueueCreate(10, sizeof(rads_data_t));
+    target_rads_queue = xQueueCreate(10, sizeof(target_rads_data_t));
 
     teste_pid();
     

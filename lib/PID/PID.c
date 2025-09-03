@@ -46,12 +46,12 @@ void PWM_limit(float* PWM)
     }
 }
 //Aplica o controle PID sobre o erro do RPM, atualizando o PMW dos motores
-esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float target_rpm, float* inc_value, pcnt_unit_handle_t encoder)
+esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float target_rads, float* inc_value, pcnt_unit_handle_t encoder)
 {
     float conversion_rate = 1;
-    float current_rpm = pulse_count(encoder) * conversion_rate;
+    float current_rads = pulse_count(encoder) * conversion_rate;
 
-    float error = target_rpm - current_rpm;
+    float error = target_rads - current_rads;
 
     float value;
 
@@ -63,7 +63,7 @@ esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float t
 
     update_motor(motor, *inc_value);
 
-    ESP_LOGI(TAG_PID, "Alvo: %f, | Erro: %f, | PID: %f\n", target_rpm, error, *inc_value);
+    ESP_LOGI(TAG_PID, "Alvo: %f, | Erro: %f, | PID: %f\n", target_rads, error, *inc_value);
 
     return ESP_OK;
 }

@@ -17,17 +17,17 @@
 
 typedef struct {
 
-    float left_rpm;
-    float right_rpm;
+    float left_rads;
+    float right_rads;
 
-}rpm_data_t;
+}rads_data_t;
 
 typedef struct {
 
-    float target_left_rpm;
-    float target_right_rpm;
+    float target_left_rads;
+    float target_right_rads;
 
-}target_rpm_data_t;
+}target_rads_data_t;
 
 void init_uart_read(QueueHandle_t queue);
 uint8_t crc_calc(uint8_t *data, int len);
