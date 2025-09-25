@@ -4,7 +4,7 @@
 #include "uart_esp32.h"
 #include "pid_ctrl.h"
 
-//Inicializa as filas para troca de dados entre o I2C e o PID
+//Inicializa as filas para troca de dados entre o UART e o PID
 QueueHandle_t rads_queue;
 QueueHandle_t target_rads_queue;
 

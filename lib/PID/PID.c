@@ -34,18 +34,7 @@ pid_ctrl_block_handle_t init_pid(motor_side_t motor)
     return pid;
 }
 
-void PWM_limit(float* PWM)
-{
-    if(*PWM > 1023)
-    {
-        *PWM = 1023;
-    }
-    else if(*PWM < -1023)
-    {
-        *PWM = -1023;
-    }
-}
-//Aplica o controle PID sobre o erro do RPM, atualizando o PMW dos motores
+//Aplica o controle PID sobre o erro da velocidade, atualizando o PMW dos motores
 esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float target_rads, float* inc_value, pcnt_unit_handle_t encoder)
 {
     float conversion_rate = 0.00475;
@@ -58,8 +47,6 @@ esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float t
     ESP_ERROR_CHECK(pid_compute(pid, error, &value));
 
     *inc_value += value;
-
-    PWM_limit(inc_value);
 
     update_motor(motor, *inc_value);
 

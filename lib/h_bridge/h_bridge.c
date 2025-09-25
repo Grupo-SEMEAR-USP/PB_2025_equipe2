@@ -60,6 +60,10 @@ esp_err_t update_motor(motor_side_t motor, int u)
     u > 0 ? _set_forward(motor) : _set_backward(motor);
 
     u = abs(u);
+
+    if(u > 1023)
+        u = 1023;
+    
     ledc_set_duty(LEDC_MODE, MOTOR_CHANNEL(motor), u);
     ledc_update_duty(LEDC_MODE, MOTOR_CHANNEL(motor));
     return ESP_OK;
