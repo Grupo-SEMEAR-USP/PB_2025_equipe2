@@ -3,7 +3,7 @@
 #include "PID.h"
 #include "encoder.h"
 
-static const char *UART_TAG = "UART_ESP32";
+// static const char *UART_TAG = "UART_ESP32";
 
 void init_uart_read()
 {
@@ -33,7 +33,7 @@ target_rads_data_t receive_data(target_rads_data_t *last_target_rads)
     {
         buffer[len] = '\0';
 
-        char *token = strtok(buffer, ";");
+        char *token = strtok((char *)buffer, ";");
         if(token != NULL)
         {
             target_rads.target_left_rads = atof(token);
@@ -73,14 +73,14 @@ void send_data(rads_data_t rads)
 {
     uint8_t buffer[BUFFER_LEN];
 
-    snprintf(buffer, sizeof(buffer), "%f;%f", &rads.left_rads, &rads.right_rads);
+    snprintf((char *)buffer, sizeof(buffer), "%f;%f", rads.left_rads, rads.right_rads);
 
     uart_write_bytes(UART_PORT_NUM_WRITE, (const char *)buffer, BUFFER_LEN - 1);
 }
 
 
-int teste_uart_esp()
-{
+// int teste_uart_esp()
+// {
     //teste 1 - recebe uma string
 
     // uint8_t frase[50];
@@ -95,4 +95,4 @@ int teste_uart_esp()
     //     ESP_LOGI(UART_TAG, "%s", frase);
     // }
 
-}
+// }

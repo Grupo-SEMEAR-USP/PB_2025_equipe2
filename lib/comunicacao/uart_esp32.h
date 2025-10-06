@@ -30,7 +30,7 @@ typedef struct {
 }target_rads_data_t;
 
 void init_uart_read();
-target_rads_data_t receive_data();
+target_rads_data_t receive_data(target_rads_data_t *last_target_rads);
 
 void init_uart_write();
 void send_data(rads_data_t rads);

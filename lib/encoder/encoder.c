@@ -80,6 +80,8 @@ float pulse_count(pcnt_unit_handle_t encoder)
     ESP_ERROR_CHECK(pcnt_unit_get_count(encoder, &pulse_count));
     ESP_LOGI(TAG_ENCODER, "%f", pulse_count*0.00475);
 
+    vTaskDelay(pdMS_TO_TICKS(10));
+    
     return pulse_count;
 }
 

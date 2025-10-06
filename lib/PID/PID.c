@@ -34,11 +34,19 @@ pid_ctrl_block_handle_t init_pid(motor_side_t motor)
     return pid;
 }
 
-//Aplica o controle PID sobre o erro da velocidade, atualizando o PMW dos motores
-esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float target_rads, float* inc_value, pcnt_unit_handle_t encoder)
+float speed_conversion(float time, pcnt_unit_handle_t encoder)
 {
     float conversion_rate = 0.00475;
-    float current_rads = pulse_count(encoder) * conversion_rate/pdMS_TO_TICKS(FREQ_COMUNICATION);
+    float speed = pulse_count(encoder) * conversion_rate/pdMS_TO_TICKS(time) * 1000;
+
+    return speed;
+}
+
+//Aplica o controle PID sobre o erro da velocidade, atualizando o PMW dos motores
+esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float target_rads, float* inc_value, pcnt_unit_handle_t encoder, float time)
+{
+
+    float current_rads = speed_conversion(time, encoder);
 
     float error = target_rads - current_rads;
 

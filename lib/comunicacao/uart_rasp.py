@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     print("Mandando dados para ESP...")
 
-    num = random.randint(0, 32)
+    num = 15
     send_data(num, num)
     
     receive_data()

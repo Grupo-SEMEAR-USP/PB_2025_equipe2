@@ -37,6 +37,6 @@ pid_ctrl_block_handle_t init_pid(motor_side_t motor);
 
 void PWM_limit(float*);
 
-esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float target_rads, float* inc_value, pcnt_unit_handle_t encoder);
+esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float target_rads, float* inc_value, pcnt_unit_handle_t encoder, float time);
 
 #endif
