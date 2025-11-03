@@ -104,7 +104,10 @@ def image_processing(frame):
                 x_min = center_x + min_dx
                 color = (0, 255, 0) if min_dx >= 0 else (0, 0, 255)
                 cv2.line(frame, (center_x, y), (x_min, y), color, 1)
-                area = abs(min_dx) * step
+
+                weight = (h - y)/h
+                area = abs(min_dx) * step * weight 
+                
                 if min_dx < 0:
                     area_left += area
                 else:
@@ -117,4 +120,4 @@ def image_processing(frame):
         cv2.putText(frame, f"Menor angulo: {min_angle:.2f}°", (10, h - 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
-    return frame, area_left, area_right, closest_inter, min_angle
+    return frame, area_left, area_right, closest_inter, min_angle, h
