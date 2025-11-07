@@ -21,7 +21,7 @@ void init_pwm(motor_side_t motor)
     ledc_timer_config_t ledc_timer = {
         .speed_mode       = LEDC_MODE,
         .timer_num        = LEDC_TIMER,
-        .duty_resolution  = LEDC_TIMER_8_BIT, 
+        .duty_resolution  = LEDC_TIMER_10_BIT, 
         .freq_hz          = 500, 
         .clk_cfg          = LEDC_AUTO_CLK,
     };
