@@ -44,6 +44,7 @@ class RobotHardwareInterface:
 
     def velocity_conversion(self, left_v_or_lin, right_v_or_ang, type):
 
+        # Converter individuais para linear e angular
         if type == 1:
             left = left_v_or_lin/self.wheel_radius
             right = right_v_or_ang/self.wheel_radius
@@ -53,9 +54,13 @@ class RobotHardwareInterface:
 
             return linear_vel, angular_vel
         
+        # Converter linear e angular para individuais
         if type == 2:
             left = left_v_or_lin - (right_v_or_ang*self.base_width)/2
             right = left_v_or_lin + (right_v_or_ang*self.base_width)/2
+
+            left = left*self.wheel_radius
+            right = right*self.wheel_radius
 
             return left, right
     

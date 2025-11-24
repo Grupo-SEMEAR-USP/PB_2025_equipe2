@@ -28,11 +28,16 @@ def adaptive_canny(blur):
 
 
 def line_intersection(line1, line2):
+    tolerance = 1e-6
     x1, y1, x2, y2 = line1
     x3, y3, x4, y4 = line2
     determ = (x1 - x2)*(y3 - y4) - (y1 - y2)*(x3 - x4)
-    if determ == 0:
-        return None
+    
+    if abs(determ) <= tolerance:
+        px = (x3 + x4)/ 2
+        py = y3
+        return int(px), int(py)
+
     px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / determ
     py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / determ
     return int(px), int(py)
