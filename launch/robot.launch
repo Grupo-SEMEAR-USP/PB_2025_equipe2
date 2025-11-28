@@ -1,0 +1,6 @@
+
+<launch>
+	<node name="hardware_interface" pkg="pb_2025" type="hardware_interface"/>
+	<node name="vision_node" pkg="pb_2025" type="vision"/>
+	<node name="navigation_node" pkg="pb_2025" type="navigation"/>
+<launch>
