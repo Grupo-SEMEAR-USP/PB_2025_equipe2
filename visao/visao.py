@@ -1,18 +1,19 @@
 import cv2
 import vlib
 
-cap = vlib.open_webcam(2)
+cap = vlib.open_webcam(0)
 
 while True:
 
     ret, frame = cap.read()
+    #frame = cv2.rotate(frame, cv2.ROTATE_180)
 
     if not ret:
             
         print("Não foi possível capturar frame")
         break
 
-    frame, area_left, area_right, closest_inter, min_angle = vlib.image_processing(frame)
+    frame = vlib.image_processing(frame)
 
     cv2.imshow('Linhas', frame)
 

@@ -14,10 +14,32 @@ class VisionNode():
         self.pub_min_angle = rospy.Publisher('/vision/min_angle', Float32, queue_size=10)
         self.pub_intersection = rospy.Publisher('/vision/intersection', Point, queue_size=10)
 
-        self.closest_inter = 0
-        self.min_angle = 0
+        self.closest_inter_c = 0
+        self.min_angle_c = 0
+
+        self.closest_inter_l = 0
+        self.min_angle_l = 0
 
         self.rate = rospy.Rate(10)
+
+        self.params = (2,10,0.1)        # PRECISA MUDAR E TESTAR EMPIRICAMENTE
+
+    def exp_model(self, y, a, b, c, type):
+        if type == 1:
+            return int(a * np.exp(b * y) + c)
+            
+        if type == 2:
+            return int(np.log((y - c)/a)/b)
+        
+    def estimate_distances(self,y_pixel_or_real_distance, type):
+        a, b, c = self.params
+
+        if type == 1:
+            return int(self.exp_model(y_pixel_or_real_distance, a, b, c, 1))
+            
+        if type == 2:
+            return int(self.exp_model(y_pixel_or_real_distance, a, b, c, 2))
+
 
     def open_webcam(self, device):
 
@@ -108,11 +130,8 @@ class VisionNode():
     def image_processing(self, frame):
 
         masked_frame = self.color_mask(frame)
-
         edges = self.sobel_edges(masked_frame, ksize=3, thresh=(50,255))
-
         roi_edges = self.region_of_interest(edges)
-    
         lines = cv2.HoughLinesP(roi_edges, 1, np.pi/180, 200, minLineLength=10, maxLineGap=10)
 
         h, w = frame.shape[:2]
@@ -123,50 +142,71 @@ class VisionNode():
 
         center_line_x = (center_x, 0, center_x, h)
         ref_line_y = (0, ref_y, w, ref_y)
-        v_center_x = np.array([0, h], dtype=float)
 
-        min_angle = 90.0
-        min_angle_line = None
-        closest_inter = None
-        max_inter_y = -1
+        v_center_x = np.array([0, h], dtype=float)
+        v_ref_line_y = np.array([0,w], dtype=float)
+
+        min_angle_c = 90.0
+        min_angle_l = 90.0
+
+        min_angle_line_c = None
+        min_angle_line_l = None
+
+        max_inter_c = -1
+        max_inter_l = -1
 
         if lines is not None:
             for x1, y1, x2, y2 in lines[:, 0]:
                 cv2.line(frame, (x1, y1), (x2, y2), (255, 199, 209), 3)
 
-                inter_x = self.line_intersection(center_line_x, (x1, y1, x2, y2))
-                inter_y = self.line_intersection(ref_line_y, (x1, y1, x2, y2))
+                inter_central = self.line_intersection(center_line_x, (x1, y1, x2, y2))
+                inter_lateral = self.line_intersection(ref_line_y, (x1, y1, x2, y2))
 
-                if inter_x is not None and inter_y is not None:
-                    ix_x, ix_y = inter_x
-                    iy_x, iy_y = inter_y
+                if inter_central is not None and inter_lateral is not None:
+                    ic_x, ic_y = inter_central
+                    il_x, il_y = inter_lateral
 
-                if 0 <= ix_x < w and 0 <= ix_y < h and iy_x < w and iy_y < h:
+                if 0 <= ic_x < w and 0 <= ic_y < h:
 
                     #cv2.line(frame, (ix_x, ix_y), (iy_x, iy_y), (238, 130, 238), 3)
 
                     v_line = np.array([x2 - x1, y2 - y1], dtype=float)
-                    dot = np.dot(v_center_x, v_line)
-                    norms = np.linalg.norm(v_center_x) * np.linalg.norm(v_line)
+                    dot_c = np.dot(v_center_x, v_line)
+                    norms_c = np.linalg.norm(v_center_x) * np.linalg.norm(v_line)
 
-                    if norms > 1e-6:
-                        cos_theta = np.clip(dot / norms, -1.0, 1.0)
-                        angle = float(np.degrees(np.arccos(cos_theta)))
+                    if norms_c > 1e-6:
+                        cos_theta_c = np.clip(dot_c / norms_c, -1.0, 1.0)
+                        angle_c = np.degrees(np.arccos(cos_theta_c))
+                        cv2.circle(frame, inter_central, 6, (0, 255, 255), -1)
+
+                        cross_c = v_center_x[0] * v_line[1] - v_center_x[1] * v_line[0]
+
+                        if cross_c < 0:
+                            angle_c = -angle_c 
+
                     else:
-                        angle = 90.0
-                        cv2.circle(frame, closest_inter, 6, (0, 255, 255), -1)
+                        angle_c = 90.0
+                        cv2.circle(frame, inter_central, 6, (0, 255, 255), -1)
 
-                    if angle < min_angle or (angle == min_angle and ix_y > max_inter_y):
-                        self.min_angle = angle
-                        min_angle_line = (x1, y1, x2, y2)
-                        self.closest_inter = (ix_x, ix_y)
-                        cv2.circle(frame, closest_inter, 6, (0, 255, 255), -1)
-                        max_inter_y = ix_y
+                    if angle_c < self.min_angle_c or (angle_c == self.min_angle_c and ic_y > max_inter_c):
+                        self.min_angle_c = angle_c
+                        min_angle_line_c = (x1, y1, x2, y2)
+                        self.closest_inter_c = (ic_x, ic_y)
+                        cv2.circle(frame, self.closest_inter_c, 6, (0, 255, 255), -1)
+                        max_inter_c = ic_y
 
-        if min_angle_line is not None and closest_inter is not None:
-            x1, y1, x2, y2 = min_angle_line
+                if 0 <= il_x < w and 0 <= il_y < h:
+                     
+                     ref_line = (x1 - self.estimate_distances(0.2375, self.params, 2), y1, 
+                                 x2 - self.estimate_distances(0.2375, self.params, 2), y2)
+                     
+                     cv2.line(frame, ((x1 - self.estimate_distances(0.2375, self.params, 2)), y1), 
+                              ((x2 - self.estimate_distances(0.2375, self.params, 2)), y2), (0, 255, 0), 2)
+
+        if min_angle_line_c is not None and self.closest_inter_c is not None:
+            x1, y1, x2, y2 = min_angle_line_c
             #cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
-            cv2.putText(frame, f"Menor angulo: {min_angle:.2f}°", (10, h - 20),
+            cv2.putText(frame, f"Menor angulo: {self.min_angle_c:.2f}°", (10, h - 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
         return frame

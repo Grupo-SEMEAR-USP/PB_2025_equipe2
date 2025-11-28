@@ -24,43 +24,58 @@ class RobotHardwareInterface:
 
         # Adicionar locks para thread safety
         self.lock = threading.Lock()
-        self.current_left_wheel_velocity = 0.0
-        self.current_right_wheel_velocity = 0.0
+        self.current_left_wheel_velocity = 0.0      # EM RAD/SEGUNDO
+        self.current_right_wheel_velocity = 0.0     # EM RAD/SEGUNDO
 
-        self.target_left_vel = 0.0
-        self.target_right_vel = 0.0
+        self.target_left_vel = 0.0                  # EM RAD/SEGUNDO
+        self.target_right_vel = 0.0                 # EM RAD/SEGUNDO
 
         self.is_running = True
         self.receiver_thread = threading.Thread(target=self._read_data_loop)
         self.receiver_thread.daemon = True
         self.receiver_thread.start()
 
-        self.wheel_radius = 0
-        self.base_width = 0
+        self.wheel_radius = 0.0485          # EM METROS
+        self.base_width = 0.38              # EM METROS
+        self.between_wheels = 0.1925        # EM METROS
 
-        self.cmd_pub = rospy.Publisher("/cmd/curret_vel", Twist, queue_size=10)
-        rospy.Subscriber('/cmd/target_vel', Twist, self.target_vel_cb)
+        self.cmd_pub = rospy.Publisher("/esp/current_vel", Twist, queue_size=10)
+        rospy.Subscriber('/cmd/vel', Twist, self.target_vel_cb)
 
 
     def velocity_conversion(self, left_v_or_lin, right_v_or_ang, type):
 
         # Converter individuais para linear e angular
         if type == 1:
-            left = left_v_or_lin/self.wheel_radius
-            right = right_v_or_ang/self.wheel_radius
+
+            # left_v_or_lin está em rad/s
+            # right_v_or_ang está em rad/s
+
+            # linear_vel deve sair em m/s
+            # angular_vel deve sair em rad/s
+
+            left = left_v_or_lin*self.wheel_radius      # Velocidade do motor esquerdo em m/s
+            right = right_v_or_ang*self.wheel_radius    # Velocidade do motor direito em m/s
 
             linear_vel = (right + left)/2
-            angular_vel = (right - left)/self.base_width
+            angular_vel = (right - left)/self.between_wheels
 
             return linear_vel, angular_vel
         
         # Converter linear e angular para individuais
         if type == 2:
-            left = left_v_or_lin - (right_v_or_ang*self.base_width)/2
-            right = left_v_or_lin + (right_v_or_ang*self.base_width)/2
 
-            left = left*self.wheel_radius
-            right = right*self.wheel_radius
+            # left_v_or_lin está em m/s
+            # right_v_or_ang está em rad/s
+
+            # left deve sair em rad/s
+            # right deve sair em rad/s
+
+            left = left_v_or_lin - (right_v_or_ang*self.between_wheels)/2       # Velocidade do motor esquerdo em m/s
+            right = left_v_or_lin + (right_v_or_ang*self.between_wheels)/2      # Velocidade do motor direito em m/s  
+
+            left = left / self.wheel_radius         # Velocidade do motor esquerdo em rad/s
+            right = right / self.wheel_radius       # Velocidade do motor direito em rad/s
 
             return left, right
     
