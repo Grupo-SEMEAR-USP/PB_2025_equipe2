@@ -11,35 +11,31 @@ class VisionNode():
 
         rospy.init_node('vision_node', anonymous=True)
 
-        self.pub_min_angle = rospy.Publisher('/vision/min_angle', Float32, queue_size=10)
-        self.pub_intersection = rospy.Publisher('/vision/intersection', Point, queue_size=10)
+        self.pub_min_angle_c = rospy.Publisher('/vision/min_angle_c', Float32, queue_size=10)
+        self.pub_min_angle_r = rospy.Publisher('/vision/min_angle_r', Float32, queue_size=10)
+        self.pub_intersection_c = rospy.Publisher('/vision/intersection_c', Point, queue_size=10)
 
-        self.closest_inter_c = 0
-        self.min_angle_c = 0
+        self.closest_inter_c = Point()
+        self.min_angle_c = 90
 
-        self.closest_inter_l = 0
-        self.min_angle_l = 0
+        self.closest_inter_r = Point()
+        self.min_angle_r = 90
 
         self.rate = rospy.Rate(10)
 
-        self.params = (2,10,0.1)        # PRECISA MUDAR E TESTAR EMPIRICAMENTE
+        self.params = (3.406410147905296e-16,0.9999999998947352,1.0)
 
     def exp_model(self, y, a, b, c, type):
         if type == 1:
-            return int(a * np.exp(b * y) + c)
+            return a * np.exp(b * y) + c
             
         if type == 2:
-            return int(np.log((y - c)/a)/b)
+            return np.log((y - c)/a)/b
         
     def estimate_distances(self,y_pixel_or_real_distance, type):
         a, b, c = self.params
 
-        if type == 1:
-            return int(self.exp_model(y_pixel_or_real_distance, a, b, c, 1))
-            
-        if type == 2:
-            return int(self.exp_model(y_pixel_or_real_distance, a, b, c, 2))
-
+        return self.exp_model(y_pixel_or_real_distance, a, b, c, type)
 
     def open_webcam(self, device):
 
@@ -131,8 +127,8 @@ class VisionNode():
 
         masked_frame = self.color_mask(frame)
         edges = self.sobel_edges(masked_frame, ksize=3, thresh=(50,255))
-        roi_edges = self.region_of_interest(edges)
-        lines = cv2.HoughLinesP(roi_edges, 1, np.pi/180, 200, minLineLength=10, maxLineGap=10)
+        #roi_edges = self.region_of_interest(edges)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 200, minLineLength=10, maxLineGap=10)
 
         h, w = frame.shape[:2]
         center_x = w // 2
@@ -144,16 +140,14 @@ class VisionNode():
         ref_line_y = (0, ref_y, w, ref_y)
 
         v_center_x = np.array([0, h], dtype=float)
-        v_ref_line_y = np.array([0,w], dtype=float)
-
-        min_angle_c = 90.0
-        min_angle_l = 90.0
 
         min_angle_line_c = None
-        min_angle_line_l = None
+        min_angle_line_r = None
 
         max_inter_c = -1
-        max_inter_l = -1
+        max_inter_r = -1
+
+        ic_y = 0
 
         if lines is not None:
             for x1, y1, x2, y2 in lines[:, 0]:
@@ -189,28 +183,78 @@ class VisionNode():
                         cv2.circle(frame, inter_central, 6, (0, 255, 255), -1)
 
                     if angle_c < self.min_angle_c or (angle_c == self.min_angle_c and ic_y > max_inter_c):
+
                         self.min_angle_c = angle_c
-                        min_angle_line_c = (x1, y1, x2, y2)
-                        self.closest_inter_c = (ic_x, ic_y)
-                        cv2.circle(frame, self.closest_inter_c, 6, (0, 255, 255), -1)
+
+                        self.closest_inter_c.x = ic_x
+                        self.closest_inter_c.y = ic_y
+                        self.closest_inter_c.z = 0
+                        closest_inter_c_visual = (ic_x, ic_y)
+
+                        self.pub_min_angle_c.publish(self.min_angle_c)
+                        self.pub_intersection_c.publish(self.closest_inter_c)
+
+                        cv2.circle(frame, closest_inter_c_visual, 6, (0, 255, 255), -1)
                         max_inter_c = ic_y
 
                 if 0 <= il_x < w and 0 <= il_y < h:
                      
-                     ref_line = (x1 - self.estimate_distances(0.2375, self.params, 2), y1, 
-                                 x2 - self.estimate_distances(0.2375, self.params, 2), y2)
+                    ref_line = (x1 - 300, y1, 
+                                x2 - 300, y2)
                      
-                     cv2.line(frame, ((x1 - self.estimate_distances(0.2375, self.params, 2)), y1), 
-                              ((x2 - self.estimate_distances(0.2375, self.params, 2)), y2), (0, 255, 0), 2)
+                    v_ref_line = np.array([(x2 - 300) - (x1 - 300),
+                                        y2 - y1], dtype=float)
+                     
+                    cv2.line(frame, (x1 - 300, y1), 
+                              (x2 - 300, y2), (0, 255, 0), 2)
+                     
+                    inter_ref = self.line_intersection(center_line_x, ref_line)
+
+                    if inter_ref is not None:
+                        ir_x, ir_y = inter_ref
+                    
+                    dot_r = np.dot(v_ref_line, v_center_x)
+                    norms_r = np.linalg.norm(v_ref_line) * np.linalg.norm(v_center_x)
+
+                    if norms_r > 1e-6:
+                        cos_theta_l = np.clip(dot_r / norms_r, -1.0, 1.0)
+                        angle_r = np.degrees(np.arccos(cos_theta_l))
+                        cv2.circle(frame, inter_central, 6, (0, 255, 255), -1)
+
+                        cross_r = v_center_x[0] * v_ref_line[1] - v_center_x[1] * v_ref_line[0]
+
+                        if cross_r < 0:
+                            angle_r = -angle_r 
+
+                    else:
+                        angle_r = 90.0
+                        cv2.circle(frame, inter_central, 6, (0, 255, 255), -1)
+
+                    if angle_r < self.min_angle_r or (angle_r == self.min_angle_r and ir_y > max_inter_r):
+                        self.min_angle_r = angle_r
+                        self.closest_inter_r.x = ir_x
+                        self.closest_inter_r.y = ir_y
+                        self.closest_inter_r.z = 0
+                        closest_inter_r_visual = (ir_x, ir_y)
+
+                        self.pub_min_angle_r.publish(self.min_angle_r)
+
+                        cv2.circle(frame, closest_inter_r_visual, 6, (0, 255, 255), -1)
+                        max_inter_r = ir_y
 
         if min_angle_line_c is not None and self.closest_inter_c is not None:
             x1, y1, x2, y2 = min_angle_line_c
             #cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
-            cv2.putText(frame, f"Menor angulo: {self.min_angle_c:.2f}°", (10, h - 20),
+            cv2.putText(frame, f"Menor angulo: {abs(self.min_angle_c):.2f}°", (10, h - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+
+        if min_angle_line_r is not None and self.closest_inter_r is not None:
+            x1, y1, x2, y2 = min_angle_line_r
+            #cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
+            cv2.putText(frame, f"Menor angulo R: {abs(self.min_angle_r):.2f}°", (10, h - 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
         return frame
-
 
     def run(self):
 
@@ -219,6 +263,7 @@ class VisionNode():
         while not rospy.is_shutdown():
 
             ret, frame = cap.read()
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
 
             if not ret:
                     
@@ -226,20 +271,6 @@ class VisionNode():
                 break
 
             frame = self.image_processing(frame)
-
-            self.pub_min_angle.publish(self.min_angle)
-            
-            intersec_msg = Point()
-            if self.closest_inter is not None:
-                intersec_msg.x = float(self.closest_inter[0])
-                intersec_msg.y = float(self.closest_inter[1])
-                intersec_msg.z = 0.0
-            
-            else:
-                intersec_msg.x = intersec_msg.y = intersec_msg.z = 0.0
-            
-            self.pub_intersection.publish(intersec_msg)
-
 
             cv2.imshow('Linhas', frame)
 

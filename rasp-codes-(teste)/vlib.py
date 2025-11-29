@@ -1,23 +1,23 @@
 import cv2
 import numpy as np
 
-params = (2,10,0.1)
+params = (3.406410147905296e-16,0.9999999998947352,1.0)
 
 def exp_model(y, a, b, c, type):
     if type == 1:
-        return int(a * np.exp(b * y) + c)
+        return a * np.exp(b * y) + c
         
     if type == 2:
-        return int(np.log((y - c)/a)/b)
+        return np.log((y - c)/a)/b
     
 def estimate_distances(y_pixel_or_real_distance, params, type):
     a, b, c = params
 
     if type == 1:
-        return int(exp_model(y_pixel_or_real_distance, a, b, c, 1))
+        return exp_model(y_pixel_or_real_distance, a, b, c, 1)
         
     if type == 2:
-        return int(exp_model(y_pixel_or_real_distance, a, b, c, 2))
+        return exp_model(y_pixel_or_real_distance, a, b, c, 2)
 
 def open_webcam(device):
 
@@ -88,7 +88,6 @@ def region_of_interest(img):
         masked = cv2.bitwise_and(img, mask)
         return masked
 
-
 def line_intersection(line1, line2):
         tolerance = 1e-6
         x1, y1, x2, y2 = line1
@@ -109,8 +108,8 @@ def image_processing(frame):
 
         masked_frame = color_mask(frame)
         edges = sobel_edges(masked_frame, ksize=3, thresh=(50,255))
-        roi_edges = region_of_interest(edges)
-        lines = cv2.HoughLinesP(roi_edges, 1, np.pi/180, 200, minLineLength=10, maxLineGap=10)
+        # roi_edges = region_of_interest(edges)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 200, minLineLength=10, maxLineGap=10)
 
         h, w = frame.shape[:2]
         center_x = w // 2
@@ -122,16 +121,17 @@ def image_processing(frame):
         ref_line_y = (0, ref_y, w, ref_y)
 
         v_center_x = np.array([0, h], dtype=float)
-        v_ref_line_y = np.array([0,w], dtype=float)
 
         min_angle_c = 90.0
-        min_angle_l = 90.0
+        min_angle_r = 90.0
 
         min_angle_line_c = None
-        min_angle_line_l = None
+        min_angle_line_r = None
 
         max_inter_c = -1
-        max_inter_l = -1
+        max_inter_r = -1
+
+        ic_y = 0
 
         if lines is not None:
             for x1, y1, x2, y2 in lines[:, 0]:
@@ -175,16 +175,54 @@ def image_processing(frame):
                 
                 if 0 <= il_x < w and 0 <= il_y < h:
                      
-                     ref_line = (x1 - estimate_distances(0.2375, params, 2), y1, 
-                                 x2 - estimate_distances(0.2375, params, 2), y2)
+                    ref_line = (x1 - 300, y1, 
+                                 x2 - 300, y2)
+                    
+                    v_ref_line = np.array([(x2 - 300) - (x1 - 300),
+                                           y2 - y1], dtype=float)
                      
-                     cv2.line(frame, ((x1 - estimate_distances(0.2375, params, 2)), y1), 
-                              ((x2 - estimate_distances(0.2375, params, 2)), y2), (0, 255, 0), 2)
+                    cv2.line(frame, (x1 - 300, y1), 
+                              (x2 - 300, y2), (0, 255, 0), 2)
+                    
+                    inter_ref = line_intersection(center_line_x, ref_line)
+
+                    if inter_ref is not None:
+                         ir_x, ir_y = inter_ref
+                     
+                    dot_r = np.dot(v_ref_line, v_center_x)
+                    norms_r = np.linalg.norm(v_ref_line) * np.linalg.norm(v_center_x)
+
+                    if norms_r > 1e-6:
+                        cos_theta_l = np.clip(dot_r / norms_r, -1.0, 1.0)
+                        angle_r = np.degrees(np.arccos(cos_theta_l))
+                        cv2.circle(frame, inter_central, 6, (0, 255, 255), -1)
+
+                        cross_r = v_center_x[0] * v_ref_line[1] - v_center_x[1] * v_ref_line[0]
+
+                        if cross_r < 0:
+                            angle_r = -angle_r 
+
+                    else:
+                        angle_r = 90.0
+                        cv2.circle(frame, inter_central, 6, (0, 255, 255), -1)
+
+                    if angle_r < min_angle_r or (angle_r == min_angle_r and ir_y > max_inter_r):
+                        min_angle_r = angle_r
+                        min_angle_line_r = (x1, y1, x2, y2)
+                        closest_inter_r = (ir_x, ir_y)
+                        cv2.circle(frame, closest_inter_r, 6, (0, 255, 255), -1)
+                        max_inter_r = ir_y
 
         if min_angle_line_c is not None and closest_inter_c is not None:
             x1, y1, x2, y2 = min_angle_line_c
             #cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
-            cv2.putText(frame, f"Menor angulo C: {min_angle_c:.2f}°", (10, h - 20),
+            cv2.putText(frame, f"Menor angulo C: {abs(min_angle_c):.2f}°", (10, h - 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
-        
-        return frame
+            
+        if min_angle_line_r is not None and closest_inter_r is not None:
+            x1, y1, x2, y2 = min_angle_line_r
+            #cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
+            cv2.putText(frame, f"Menor angulo R: {abs(min_angle_r):.2f}°", (10, h - 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+
+        return frame, ic_y
