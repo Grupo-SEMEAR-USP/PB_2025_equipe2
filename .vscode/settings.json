@@ -1,0 +1,8 @@
+{
+    "git.ignoreLimitWarning": true,
+    "python.REPL.enableREPLSmartSend": false,
+    "files.associations": {
+        "pid.h": "c"
+    },
+    "cmake.sourceDirectory": "/home/artur/Documentos/PlatformIO/Projects/Teste/Projeto_Bixos_2025-main"
+}
