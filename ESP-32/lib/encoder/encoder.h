@@ -14,11 +14,11 @@
 #define PCNT_HIGH_LIMIT     1500
 #define PCNT_LOW_LIMIT     -1500
 
-#define ENCODER_CHA_R1      GPIO_NUM_33//AC2
-#define ENCODER_CHA_R2      GPIO_NUM_32//AC1
+#define ENCODER_CHA_R1      GPIO_NUM_19//AC2
+#define ENCODER_CHA_R2      GPIO_NUM_5//AC1
 
-#define ENCODER_CHA_L1      GPIO_NUM_26//BC2
-#define ENCODER_CHA_L2      GPIO_NUM_27//BC1
+#define ENCODER_CHA_L1      GPIO_NUM_23//BC2
+#define ENCODER_CHA_L2      GPIO_NUM_22//BC1
 
 typedef enum
 {

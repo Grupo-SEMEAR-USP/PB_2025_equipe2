@@ -13,14 +13,14 @@
 
 #define pinStandBy          GPIO_NUM_19 //StandyBy
 
-#define INPUT_RIGHT_1       GPIO_NUM_18//AIN1
-#define INPUT_RIGHT_2       GPIO_NUM_4//AIN2
+#define INPUT_RIGHT_1       GPIO_NUM_12//AIN1
+#define INPUT_RIGHT_2       GPIO_NUM_13//AIN2
 
-#define INPUT_LEFT_1        GPIO_NUM_21//BIN1
-#define INPUT_LEFT_2        GPIO_NUM_22//BIN2
+#define INPUT_LEFT_1        GPIO_NUM_32//BIN1
+#define INPUT_LEFT_2        GPIO_NUM_33//BIN2
 
-#define PWM_GPIO_LEFT       GPIO_NUM_23 //PWMB
-#define PWM_GPIO_RIGHT      GPIO_NUM_25 //PWMA
+#define PWM_GPIO_LEFT       GPIO_NUM_27 //PWMB
+#define PWM_GPIO_RIGHT      GPIO_NUM_14 //PWMA
 
 #define LEDC_CHANNEL_RIGHT   LEDC_CHANNEL_0
 #define LEDC_CHANNEL_LEFT    LEDC_CHANNEL_1

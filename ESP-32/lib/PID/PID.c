@@ -52,7 +52,7 @@ esp_err_t pid_calculate(pid_ctrl_block_handle_t pid, motor_side_t motor, float t
 
     update_motor(motor, *inc_value);
 
-    ESP_LOGI(TAG_PID, "Alvo: %f, | Erro: %f, | PID: %f\n", target_rads, error, *inc_value);
+    // ESP_LOGI(TAG_PID, "Alvo: %f, | Erro: %f, | PID: %f\n", target_rads, error, *inc_value);
 
     return ESP_OK;
 }

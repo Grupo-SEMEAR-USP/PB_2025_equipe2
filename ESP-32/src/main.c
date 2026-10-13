@@ -36,8 +36,8 @@ void init_all()
     left_encoder = init_encoder(ENCODER_LEFT);
     right_encoder = init_encoder(ENCODER_RIGHT);
 
-    ESP_LOGI(TAG_MAIN, "UART..."); 
-    init_uart(); 
+    // ESP_LOGI(TAG_MAIN, "UART..."); 
+    // init_uart(); 
     
     ESP_LOGI(TAG_MAIN, "Hardware inicializado!"); 
 }
@@ -144,21 +144,40 @@ void app_main()
     // 1. Inicializar hardware
    init_all();
     
-    // 2. Criar fila
-    target_rads_queue = xQueueCreate(10, sizeof(target_rads_data_t));
+    // // 2. Criar fila
+    // target_rads_queue = xQueueCreate(10, sizeof(target_rads_data_t));
     
-    if (target_rads_queue == NULL) {
-        ESP_LOGE(TAG_MAIN, "Erro criando fila target_rads_queue!");
-        return;
+    // if (target_rads_queue == NULL) {
+    //     ESP_LOGE(TAG_MAIN, "Erro criando fila target_rads_queue!");
+    //     return;
+    // }
+    
+    // // 3. Criar tasks
+    // xTaskCreatePinnedToCore(uart_communication_task, "uart_comm", 4096, NULL, 5, NULL, 1);
+    // xTaskCreatePinnedToCore(motor_control_task, "motor_ctrl", 4096, NULL, 10, NULL, 0); 
+    // xTaskCreate(monitoring_task, "monitor", 4096, NULL, 1, NULL); 
+    
+    // ESP_LOGI(TAG_MAIN, "Sistema inicializado! Pronto para comunicação ROS.");
+    
+    // // Task principal não faz mais nada
+    // vTaskSuspend(NULL); 
+
+    target_rads_data_t current_target_rads = {15.0, 15.0};
+
+    pid_ctrl_block_handle_t left_pid = init_pid(LEFT_MOTOR);
+    pid_ctrl_block_handle_t right_pid = init_pid(RIGHT_MOTOR);
+
+    while(1)
+    {
+
+        update_motor(LEFT_MOTOR, 100);
+        update_motor(RIGHT_MOTOR, 100);
+    //     pid_calculate(left_pid, LEFT_MOTOR, current_target_rads.target_left_rads, &valpidL, left_encoder);
+    //     pid_calculate(right_pid, RIGHT_MOTOR, current_target_rads.target_right_rads, &valpidR, right_encoder);
+        vTaskDelay(pdMS_TO_TICKS(20)); // 50Hz (Frequência de controle)
     }
     
-    // 3. Criar tasks
-    xTaskCreatePinnedToCore(uart_communication_task, "uart_comm", 4096, NULL, 5, NULL, 1);
-    xTaskCreatePinnedToCore(motor_control_task, "motor_ctrl", 4096, NULL, 10, NULL, 0); 
-    xTaskCreate(monitoring_task, "monitor", 4096, NULL, 1, NULL); 
+        
+
     
-    ESP_LOGI(TAG_MAIN, "Sistema inicializado! Pronto para comunicação ROS.");
-    
-    // Task principal não faz mais nada
-    vTaskSuspend(NULL); 
 }

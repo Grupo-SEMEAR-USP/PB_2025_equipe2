@@ -11,7 +11,7 @@ void init_gpio(motor_side_t motor)
     gpio_set_direction(PWM_INPUT(motor), GPIO_MODE_OUTPUT);
 
     gpio_set_direction(pinStandBy, GPIO_MODE_OUTPUT);
-    gpio_set_level(pinStandBy, HIGH);
+    // gpio_set_level(pinStandBy, HIGH);
 
 }
 
